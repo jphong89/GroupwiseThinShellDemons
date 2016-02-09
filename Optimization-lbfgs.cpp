@@ -69,7 +69,7 @@ void startOptimization(){
 			writeOFF(Surface[i],fileName[i]+prefix+".off",i);
 			cout<<"Finishing surface "<<i<<endl;
 
-			if ((MESHLABOPTION > 0) && (iter % MESHLABOPTION == 0)) {
+			if ((MESHLABOPTION > 0) && (iter % MESHLABOPTION == 0) && (iter > 0)) {
 				cout<<"PostProcessing"<<endl;
 				char cmdLine[1000];
 				sprintf(cmdLine,"meshlabserver -i %s -o %s -s meshlabscript_demons.mlx\n",Surface[i]->if_name.c_str(),Surface[i]->if_name.c_str());

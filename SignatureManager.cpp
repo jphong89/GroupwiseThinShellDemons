@@ -553,34 +553,6 @@ void BasicMesh::findCorrespondenceBothWay(BasicMesh* secondMesh,double featWeigh
 			VAL(affinity,i,j,affinityN) = dif;
 		}
 	}
-
-
-	/*
-	float minA = 1000;
-	float maxA = 0;
-
-	float temp;
-	for (int i = 0; i < affinityM; i++){
-		for (int j = 0; j < affinityN; j++){
-			temp = VAL(affinity,i,j,affinityN);
-			if (temp >= 0){
-				if (temp > maxA) maxA = temp;
-				if (temp < minA) minA = temp;
-			}
-		}
-	}
-
-	for (int i = 0; i < affinityM; i++){
-		for (int j = 0; j < affinityN; j++){
-			temp = VAL(affinity,i,j,affinityN);
-			if (temp >= 0)
-				VAL(affinity,i,j,affinityN) = 1-(temp - minA) / (maxA - minA);
-			else
-				VAL(affinity,i,j,affinityN) = 0;
-			
-		}
-	}
-	*/
 }
 
 int compareNode (const void * a, const void * b)
@@ -634,4 +606,57 @@ void BasicMesh::findMatch2(BasicMesh* secondMesh, int surfaceIdx){
 	delete[] queue;
 	delete[] ibool;
 	delete[] jbool;
+}
+
+
+void BasicMesh::outputAffinity(BasicMesh* secondMesh, int surfaceIdx){
+	int affinityM = vertexNum;
+	int affinityN = secondMesh->vertexNum;
+
+	ofstream fout;
+	char val1[10];
+	char val2[10];
+
+	itoa(idx,val1,10);
+	itoa(surfaceIdx,val2,10);
+
+	string filename = string(val1)+"_"+string(val2)+".txt";
+	fout.open(filename); 
+
+	
+	for (int i = 0; i< affinityM; i++){
+		double minValue = 10000;
+		int minJ = 0;
+
+		for (int j = 0; j < affinityN; j++)
+			if (VAL(affinity,i,j,affinityN) < minValue){
+				minValue = VAL(affinity,i,j,affinityN);
+				minJ = j;
+			}
+		if (minValue < 100)
+			fout<<i<<' '<<minJ<<' '<<minValue<<endl;
+			
+	}
+
+	fout.close();
+
+}
+
+void BasicMesh::outputForce(){
+	int affinityM = vertexNum;
+
+	ofstream fout;
+	char val1[10];
+	itoa(idx,val1,10);
+
+	string filename = string(val1)+".txt";
+	fout.open(filename); 
+
+	for (int i = 0; i< affinityM; i++){
+		fout<<"target: "<<targetPos[i]<<" weight: "<<overallWeight[i]<<endl;
+
+	}
+
+	fout.close();
+
 }

@@ -323,6 +323,8 @@ public:
 	/*REGISTRATION*/
 	void findCorrespondenceBothWay(BasicMesh*,double); //compute feature similarity based on euc dis & curvatures3
 	void findMatch2(BasicMesh* secondMesh, int surfaceIdx); //from static to moving
+	void outputAffinity(BasicMesh* secondMesh, int surfaceIdx); // for test purpose
+	void outputForce();
 
 	/* surface information */
 	int faceNum;
