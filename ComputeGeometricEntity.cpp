@@ -566,11 +566,14 @@ void BasicMesh::initialDeformation(){
 }
 
 void BasicMesh::summerizeForce(){
+	int startSurface = max_zenyo(idx - GEOMETRIC_RANGE, 0);
+	int endSurface = min_zenyo(idx + GEOMETRIC_RANGE, surfaceNum - 1);
+
 	for (int j = 0; j < vertexNum; j++){
 		Vector_3 force = Vector_3(0,0,0);
 		double weightSum = 0;
 
-		for (int i = 0; i < surfaceNum; i++)
+		for (int i = startSurface; i <= endSurface; i++)
 			if (i != idx){
 				force = force + Vector_3(Surface[i]->vertexIndex[bestMatch[i][j]]->point().x(),
 										 Surface[i]->vertexIndex[bestMatch[i][j]]->point().y(),
@@ -596,15 +599,14 @@ void BasicMesh::constructLandmark(string filename){
 	double temp;
 
 	landmarkNum = new int[surfaceNum];
-	landmarkOther = new int[surfaceNum];
 	landmarks1 = new int*[surfaceNum];
 	landmarks2 = new int*[surfaceNum];
 
-	int startIdx = max_zenyo(0,idx - RANGE);
-	int endIdx = min_zenyo(surfaceNum-1,idx + RANGE);
+	int startIdx = max_zenyo(0,idx - TEXTURE_RANGE);
+	int endIdx = min_zenyo(surfaceNum-1,idx + TEXTURE_RANGE);
 	for (int i = startIdx; i <= endIdx; i++){
 		if (i == idx) continue;
-		fin>>landmarkOther[i];
+		fin>>temp;
 		fin>>landmarkNum[i];
 
 		landmarks1[i] = new int[landmarkNum[i]];

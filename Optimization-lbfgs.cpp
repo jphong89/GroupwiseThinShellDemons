@@ -79,8 +79,12 @@ void startOptimization(){
 		}
 
 		REGWEIGHT *= 0.9;
-		BENDWEIGHT *= 0.95;
-		LANDMARKWEIGHT *= 0.8;
+		BENDWEIGHT *= 0.8;
+		LANDMARKWEIGHT *= 0.9;
+		EUCLWEIGHT *= 0.9;
+
+
+		//if ((iter % 3 == 0)&&(iter != 0)) GEOMETRIC_RANGE *= 2;
 
 		cout<<"Beginning next iteration"<<endl;
 
@@ -94,7 +98,11 @@ void startOptimization(){
 
 		for (int i = 0; i < surfaceNum; i++){
 			cout<<"Computing attraction force: "<<fileName[i]<<endl;
-			for (int j = 0; j < surfaceNum; j++)
+
+			int startSurface = max_zenyo(i - GEOMETRIC_RANGE, 0);
+			int endSurface = min_zenyo(i + GEOMETRIC_RANGE, surfaceNum - 1);
+
+			for (int j = startSurface; j <= endSurface; j++)
 				if (i != j) {
 					Surface[i]->findCorrespondenceBothWay(Surface[j],EUCLWEIGHT);
 					Surface[i]->findMatch2(Surface[j],j);
@@ -306,8 +314,8 @@ lbfgsfloatval_t penalizeLandmark(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, i
 	double weight = LANDMARKWEIGHT;
 	lbfgsfloatval_t fx = 0.0;
 
-	int startIdx = max_zenyo(0,idx - RANGE);
-	int endIdx = min_zenyo(surfaceNum-1,idx + RANGE);
+	int startIdx = max_zenyo(0,idx - min_zenyo(GEOMETRIC_RANGE,TEXTURE_RANGE));
+	int endIdx = min_zenyo(surfaceNum-1,idx + min_zenyo(GEOMETRIC_RANGE,TEXTURE_RANGE));
 
 	for (int i = startIdx; i <= endIdx; i++){
 		if (i == idx) continue;

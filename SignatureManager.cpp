@@ -596,7 +596,7 @@ void BasicMesh::findMatch2(BasicMesh* secondMesh, int surfaceIdx){
 			ibool[queue[k].i] = true;
 			jbool[queue[k].j] = true;
 
-			matchWeight[surfaceIdx][queue[k].i] = exp(-queue[k].value);
+			matchWeight[surfaceIdx][queue[k].i] = exp(-(3.0/DISTHRESHOLD)*queue[k].value);
 			//matchWeight[surfaceIdx][queue[k].i] = min_zenyo(1,1/ queue[k].value);
 
 			bestMatch[surfaceIdx][queue[k].i] = queue[k].j;
@@ -625,16 +625,8 @@ void BasicMesh::outputAffinity(BasicMesh* secondMesh, int surfaceIdx){
 
 	
 	for (int i = 0; i< affinityM; i++){
-		double minValue = 10000;
-		int minJ = 0;
 
-		for (int j = 0; j < affinityN; j++)
-			if (VAL(affinity,i,j,affinityN) < minValue){
-				minValue = VAL(affinity,i,j,affinityN);
-				minJ = j;
-			}
-		if (minValue < 100)
-			fout<<i<<' '<<minJ<<' '<<minValue<<endl;
+		fout<<matchWeight[surfaceIdx][i]<<endl;
 			
 	}
 
@@ -653,7 +645,7 @@ void BasicMesh::outputForce(){
 	fout.open(filename); 
 
 	for (int i = 0; i< affinityM; i++){
-		fout<<"target: "<<targetPos[i]<<" weight: "<<overallWeight[i]<<endl;
+		fout<<targetPos[i]<<' '<<overallWeight[i]<<endl;
 
 	}
 

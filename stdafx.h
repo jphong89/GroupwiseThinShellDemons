@@ -47,6 +47,7 @@ extern double DISTHRESHOLD; // we don't want to match things too far away
 extern double EUCLWEIGHT;
 extern int MESHLABOPTION;
 extern double LANDMARKWEIGHT;
-extern int RANGE;
+extern int TEXTURE_RANGE;
+extern int GEOMETRIC_RANGE;
 
 // TODO: reference additional headers your program requires here

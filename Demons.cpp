@@ -19,7 +19,8 @@ double DISTHRESHOLD = 12.0; // we don't want to match things too far away
 double EUCLWEIGHT = 1;
 int MESHLABOPTION = 1;
 double LANDMARKWEIGHT = 1;
-int RANGE = 2;
+int TEXTURE_RANGE = 2;
+int GEOMETRIC_RANGE = 20; // no more than 20 surfaces allowed
 
 float geodesicDistance = GEODECISDIS;
 
@@ -128,7 +129,7 @@ int main(int argc, char* argv[])
 		if (argc > 10) {
 			matchingFile = argv[10];
 			readMatchingList(matchingFile);
-			RANGE = atoi(argv[11]);
+			TEXTURE_RANGE = atoi(argv[11]);
 		}
 		cout<<"STRETCHING WEIGHT: "<<REGWEIGHT<<" -BENDING WEIGHT: "<<BENDWEIGHT<<" -EUCLIDEAN THRESHOLD: "
 			<<DISTHRESHOLD<<" -GEOMETRIC FEATURE WEIGHT: "<<EUCLWEIGHT
@@ -160,12 +161,17 @@ int main(int argc, char* argv[])
 //	#pragma omp parallel for private(i)
 	for (i = 0; i < surfaceNum; i++){
 		cout<<"Computing attraction force: "<<fileName[i]<<endl;
-		for (int j = 0; j < surfaceNum; j++)
+		
+		int startSurface = max_zenyo(i - GEOMETRIC_RANGE, 0);
+		int endSurface = min_zenyo(i + GEOMETRIC_RANGE, surfaceNum - 1);
+
+		for (int j = startSurface; j <= endSurface; j++)
 			if (i != j) {
 				Surface[i]->findCorrespondenceBothWay(Surface[j],EUCLWEIGHT);
 				Surface[i]->findMatch2(Surface[j],j);
 				//Surface[i]->outputAffinity(Surface[j],j);
 			}
+
 		Surface[i]->summerizeForce();
 		//Surface[i]->outputForce();
 	}
