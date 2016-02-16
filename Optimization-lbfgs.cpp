@@ -69,7 +69,7 @@ void startOptimization(){
 			writeOFF(Surface[i],fileName[i]+prefix+".off",i);
 			cout<<"Finishing surface "<<i<<endl;
 
-			if ((MESHLABOPTION > 0) && (iter % MESHLABOPTION == 0) && (iter > 0)) {
+			if ((MESHLABOPTION > 0) && (iter % MESHLABOPTION == 0)) {
 				cout<<"PostProcessing"<<endl;
 				char cmdLine[1000];
 				sprintf(cmdLine,"meshlabserver -i %s -o %s -s meshlabscript_demons.mlx\n",Surface[i]->if_name.c_str(),Surface[i]->if_name.c_str());
@@ -307,6 +307,140 @@ lbfgsfloatval_t penalizeBendQuadratic(const lbfgsfloatval_t *tu, lbfgsfloatval_t
 
 	facetBending = fv;
 	return fv;
+}
+
+lbfgsfloatval_t penalizeBend(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int idx){
+	double bending = 0;
+	facet* faceList = Surface[idx]->faceList;
+
+	Point_3 newV1,newV2,newV3,newNB1,newNB2,newNB3;
+	double dv1x, dv1y, dv1z, dv2x, dv2y, dv2z, dv3x, dv3y, dv3z,
+		   dnb1x,dnb1y,dnb1z,dnb2x,dnb2y,dnb2z,dnb3x,dnb3y,dnb3z;
+	double Dtheta1,Dtheta2,Dtheta3,DSOD_00,DSOD_01,DSOD_10,DSOD_11;
+	double weight,Dbend;
+
+	for (int idx=0; idx < Surface[idx]->faceNum;idx++){
+		facet f = faceList[idx];
+		if (f.isBorder) continue;
+		weight = BENDWEIGHT;
+
+		newV1 = f.v1->point() + Vector_3(u[f.index[1]*3],u[f.index[1]*3+1],u[f.index[1]*3+2]);
+		newV2 = f.v2->point() + Vector_3(u[f.index[2]*3],u[f.index[2]*3+1],u[f.index[2]*3+2]);
+		newV3 = f.v3->point() + Vector_3(u[f.index[3]*3],u[f.index[3]*3+1],u[f.index[3]*3+2]);
+		newNB1 = f.nb1->point() + Vector_3(u[f.nbIdx1*3],u[f.nbIdx1*3+1],u[f.nbIdx1*3+2]);
+		newNB2 = f.nb2->point() + Vector_3(u[f.nbIdx2*3],u[f.nbIdx2*3+1],u[f.nbIdx2*3+2]);
+		newNB3 = f.nb3->point() + Vector_3(u[f.nbIdx3*3],u[f.nbIdx3*3+1],u[f.nbIdx3*3+2]);
+
+		/* */
+		double* det1 = computeDeterminant(newV1,newV2,newV3,newNB1);
+		double* det2 = computeDeterminant(newV1,newV2,newV3,newNB2);
+		double* det3 = computeDeterminant(newV1,newV2,newV3,newNB3);
+		double theta1 = - det1[0] / ((f.area*f.sideArea1)/f.l1);
+		double theta2 = - det2[0] / ((f.area*f.sideArea2)/f.l2);
+		double theta3 = - det3[0] / ((f.area*f.sideArea3)/f.l3);
+		/* */
+		/* angle based 
+		double theta1 = computeAngle(newV1,newV2,newV3,newNB1);
+		double theta2 = computeAngle(newV2,newV3,newV1,newNB2);
+		double theta3 = computeAngle(newV3,newV1,newV2,newNB3);
+		*/
+
+		double SOD_00 = (theta1-f.theta1) * f.SO1[0][0] + (theta2-f.theta2) * f.SO2[0][0] + (theta3-f.theta3) * f.SO3[0][0];
+		double SOD_01 = (theta1-f.theta1) * f.SO1[0][1] + (theta2-f.theta2) * f.SO2[0][1] + (theta3-f.theta3) * f.SO3[0][1];
+		double SOD_10 = (theta1-f.theta1) * f.SO1[1][0] + (theta2-f.theta2) * f.SO2[1][0] + (theta3-f.theta3) * f.SO3[1][0];
+		double SOD_11 = (theta1-f.theta1) * f.SO1[1][1] + (theta2-f.theta2) * f.SO2[1][1] + (theta3-f.theta3) * f.SO3[1][1];
+
+		bending += weight * (SOD_00*SOD_00 + SOD_01*SOD_01 + SOD_10*SOD_10 + SOD_11*SOD_11); 
+
+// 		if ((f.index[1] == 2640)&& (f.index[2] == 2638) && (f.index[3] == 2570)){
+// 			facetBending = weight * (SOD_00*SOD_00 + SOD_01*SOD_01 + SOD_10*SOD_10 + SOD_11*SOD_11);
+// 			thetaDif1 = theta1 - f.theta1;
+// 			thetaDif2 = theta2 - f.theta2;
+// 			thetaDif3 = theta3 - f.theta3;
+// 		}
+
+		//COMPUTE GRADIENT
+
+		for (int i = 1; i < 4; i++)
+			for (int j = 1; j < 4; j++){
+				/* */
+				Dtheta1 = - computeDetGradient(i,j,newV1,newV2,newV3,newNB1,det1) / ((f.area*f.sideArea1)/f.l1);
+				Dtheta2 = - computeDetGradient(i,j,newV1,newV2,newV3,newNB2,det2) / ((f.area*f.sideArea2)/f.l2);
+				Dtheta3 = - computeDetGradient(i,j,newV1,newV2,newV3,newNB3,det3) / ((f.area*f.sideArea3)/f.l3);
+				/* */
+				/* angle based
+				int i1 = i;
+				int i2 = ((i+2)>3)? i-1 : i+2;
+				int i3 = ((i+1)>3)? i-2 : i+1;
+
+				cout<<i1<<i2<<i3;
+				cin>>i1;
+
+				Dtheta1 = computeAngleGradient(i1,j,newV1,newV2,newV3,newNB1);
+				Dtheta2 = computeAngleGradient(i2,j,newV2,newV3,newV1,newNB2);
+				Dtheta3 = computeAngleGradient(i3,j,newV3,newV1,newV2,newNB3);
+				*/
+
+				DSOD_00 = Dtheta1 * f.SO1[0][0] + Dtheta2 * f.SO2[0][0] + Dtheta3 * f.SO3[0][0];
+				DSOD_01 = Dtheta1 * f.SO1[0][1] + Dtheta2 * f.SO2[0][1] + Dtheta3 * f.SO3[0][1];
+				DSOD_10 = Dtheta1 * f.SO1[1][0] + Dtheta2 * f.SO2[1][0] + Dtheta3 * f.SO3[1][0];
+				DSOD_11 = Dtheta1 * f.SO1[1][1] + Dtheta2 * f.SO2[1][1] + Dtheta3 * f.SO3[1][1];
+
+				Dbend = weight * (2*SOD_00*DSOD_00 + 2*SOD_01*DSOD_01 + 2*SOD_10*DSOD_10 + 2*SOD_11*DSOD_11);
+
+				g[f.index[i]*3+j-1] += Dbend;
+			}
+
+		for (int j = 1; j < 4; j++){
+			Dtheta1 = - computeDetGradient(4,j,newV1,newV2,newV3,newNB1,det1) / ((f.area*f.sideArea1)/f.l1);
+			Dtheta2 = 0;
+			Dtheta3 = 0;
+
+			DSOD_00 = Dtheta1 * f.SO1[0][0] + Dtheta2 * f.SO2[0][0] + Dtheta3 * f.SO3[0][0];
+			DSOD_01 = Dtheta1 * f.SO1[0][1] + Dtheta2 * f.SO2[0][1] + Dtheta3 * f.SO3[0][1];
+			DSOD_10 = Dtheta1 * f.SO1[1][0] + Dtheta2 * f.SO2[1][0] + Dtheta3 * f.SO3[1][0];
+			DSOD_11 = Dtheta1 * f.SO1[1][1] + Dtheta2 * f.SO2[1][1] + Dtheta3 * f.SO3[1][1];
+
+			Dbend = weight * (2*SOD_00*DSOD_00 + 2*SOD_01*DSOD_01 + 2*SOD_10*DSOD_10 + 2*SOD_11*DSOD_11);
+
+			g[f.nbIdx1*3+j-1] += Dbend;
+		}
+		for (int j = 1; j < 4; j++){
+			Dtheta1 = 0;
+			Dtheta2 = - computeDetGradient(4,j,newV1,newV2,newV3,newNB2,det2) / ((f.area*f.sideArea2)/f.l2);
+			Dtheta3 = 0;
+
+			DSOD_00 = Dtheta1 * f.SO1[0][0] + Dtheta2 * f.SO2[0][0] + Dtheta3 * f.SO3[0][0];
+			DSOD_01 = Dtheta1 * f.SO1[0][1] + Dtheta2 * f.SO2[0][1] + Dtheta3 * f.SO3[0][1];
+			DSOD_10 = Dtheta1 * f.SO1[1][0] + Dtheta2 * f.SO2[1][0] + Dtheta3 * f.SO3[1][0];
+			DSOD_11 = Dtheta1 * f.SO1[1][1] + Dtheta2 * f.SO2[1][1] + Dtheta3 * f.SO3[1][1];
+
+			Dbend = weight * (2*SOD_00*DSOD_00 + 2*SOD_01*DSOD_01 + 2*SOD_10*DSOD_10 + 2*SOD_11*DSOD_11);
+
+			g[f.nbIdx2*3+j-1] += Dbend;
+		}
+		for (int j = 1; j < 4; j++){
+			Dtheta1 = 0;
+			Dtheta2 = 0;
+			Dtheta3 = - computeDetGradient(4,j,newV1,newV2,newV3,newNB3,det3) / ((f.area*f.sideArea3)/f.l3);
+			
+			DSOD_00 = Dtheta1 * f.SO1[0][0] + Dtheta2 * f.SO2[0][0] + Dtheta3 * f.SO3[0][0];
+			DSOD_01 = Dtheta1 * f.SO1[0][1] + Dtheta2 * f.SO2[0][1] + Dtheta3 * f.SO3[0][1];
+			DSOD_10 = Dtheta1 * f.SO1[1][0] + Dtheta2 * f.SO2[1][0] + Dtheta3 * f.SO3[1][0];
+			DSOD_11 = Dtheta1 * f.SO1[1][1] + Dtheta2 * f.SO2[1][1] + Dtheta3 * f.SO3[1][1];
+
+			Dbend = weight * (2*SOD_00*DSOD_00 + 2*SOD_01*DSOD_01 + 2*SOD_10*DSOD_10 + 2*SOD_11*DSOD_11);
+
+			g[f.nbIdx3*3+j-1] += Dbend;
+		}
+
+		delete[] det1;
+		delete[] det2;
+		delete[] det3;
+	}
+
+	facetBending = bending;
+	return bending;
 }
 
 lbfgsfloatval_t penalizeLandmark(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int idx){

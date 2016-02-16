@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
 			TEXTURE_RANGE = atoi(argv[11]);
 		}
 		cout<<"STRETCHING WEIGHT: "<<REGWEIGHT<<" -BENDING WEIGHT: "<<BENDWEIGHT<<" -EUCLIDEAN THRESHOLD: "
-			<<DISTHRESHOLD<<" -GEOMETRIC FEATURE WEIGHT: "<<EUCLWEIGHT
+			<<DISTHRESHOLD<<" -EUCLIDEAN DISTANCE WEIGHT: "<<EUCLWEIGHT
 			<<" -YOUNG: "<<YOUNG<<" -POSSION: "<<POISSON<<" -MESHLAB: "<<MESHLABOPTION<<endl;
 	}else{
 		cout<<"not enough parameters, refer ReadMe.txt";
@@ -154,6 +154,8 @@ int main(int argc, char* argv[])
 			Surface[i]->constructVertexList();
 			Surface[i]->initialDeformation();
 			if (argc > 10) Surface[i]->constructLandmark(landmarkFile[i]);
+
+			//Surface[i]->outputFeature();
 	}
 
 	/////////////////////////////* 3compute correspondences for registration *///////////////////////////////////
@@ -173,7 +175,7 @@ int main(int argc, char* argv[])
 			}
 
 		Surface[i]->summerizeForce();
-		//Surface[i]->outputForce();
+		Surface[i]->outputForce();
 	}
 	/////////////////////////////* rendering and optimization *////////////////////////////////////////////////////////////
 	startOptimization(); //direct begin for script

@@ -291,7 +291,7 @@ public:
 	PolyhedralSurf P; //the surface, core structure
 
 public:
-	/* geometric feature */
+	/* geometric feature construction*/
 	int ComputeMeshProperty();
 	void translateMesh(Vertex2FT_property_map vertex2k1_pm,Vertex2FT_property_map vertex2k2_pm); // compute facet information
 	void ComputeStretchInverse(Vertex_const_handle v1,Vertex_const_handle v2,Vertex_const_handle v3,facet* face);
@@ -312,7 +312,7 @@ public:
 	BasicMesh(string,int);
 	BasicMesh(){}
 
-	/* Prepare registration */
+	/* Prepare registration data structure */
 	void constructVertexList();
 	void constructEdgeList();
 	void constructLink();
@@ -320,18 +320,18 @@ public:
 	void summerizeForce();
 	void constructLandmark(string);
 
-	/*REGISTRATION*/
+	/*REGISTRATION matching pipeline*/
 	void findCorrespondenceBothWay(BasicMesh*,double); //compute feature similarity based on euc dis & curvatures3
 	void findMatch2(BasicMesh* secondMesh, int surfaceIdx); //from static to moving
 	void outputAffinity(BasicMesh* secondMesh, int surfaceIdx); // for test purpose
 	void outputForce();
+	void outputFeature();
 
 	/* surface information */
 	int faceNum;
 	int vertexNum;
 	int edgeNum;
 	int dirNum;
-	int *landmarkOther;
 	int *landmarkNum;
 	int **landmarks1;
 	int **landmarks2;
@@ -342,7 +342,7 @@ public:
 	edge* edgeList;
 	vertex* vertexList;
 
-	int** bestMatch;
+	Vector_3** bestMatch;
 	float** matchWeight;
 	double* u;
 	Vector_3* targetPos;
@@ -376,6 +376,7 @@ double computeDeterminant(Vertex_const_handle v1,Vertex_const_handle v2,Vertex_c
 double* computeDeterminant(Point_3 v1,Point_3 v2,Point_3 v3,Point_3 v4);
 float computeAngle(Point_3 V1,Point_3 V2,Point_3 V3,Point_3 V4);
 double computeAngle(Vector_3 v1,Vector_3 v2);
+Vector_3 closesPointOnTriangle( const Vector_3 *triangle, const Vector_3 &sourcePosition );
 
 extern float geodesicDistance;
 

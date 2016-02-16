@@ -551,16 +551,23 @@ void BasicMesh::initialDeformation(){
 	memset(overallWeight,0,sizeof(double)*vertexNum);
 
 
-	if (bestMatch != NULL) delete[] bestMatch;
+	if (bestMatch != NULL) {
+		for (int i = 0; i < surfaceNum; i++)
+			if (bestMatch[i] != NULL) delete[] bestMatch[i];
+
+		delete[] bestMatch;
+	}
 	if (matchWeight != NULL) delete[] matchWeight;
-	bestMatch = new int*[surfaceNum];
+	bestMatch = new Vector_3*[surfaceNum];
 	matchWeight = new float*[surfaceNum];
 
 	for (int i = 0; i < surfaceNum; i++){
-		bestMatch[i] = new int[vertexNum];
+		bestMatch[i] = new Vector_3[vertexNum];
 		matchWeight[i] = new float[vertexNum];
 
-		memset(bestMatch[i],0,sizeof(int)*vertexNum);
+		for (int j = 0; j < vertexNum; j++)
+			bestMatch[i][j] = Vector_3(0,0,0);
+
 		memset(matchWeight[i],0,sizeof(float)*vertexNum);
 	}
 }
@@ -575,9 +582,7 @@ void BasicMesh::summerizeForce(){
 
 		for (int i = startSurface; i <= endSurface; i++)
 			if (i != idx){
-				force = force + Vector_3(Surface[i]->vertexIndex[bestMatch[i][j]]->point().x(),
-										 Surface[i]->vertexIndex[bestMatch[i][j]]->point().y(),
-										 Surface[i]->vertexIndex[bestMatch[i][j]]->point().z()) * matchWeight[i][j];
+				force = force + bestMatch[i][j] * matchWeight[i][j];
 
 				weightSum += matchWeight[i][j];
 			}

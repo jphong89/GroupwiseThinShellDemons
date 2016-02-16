@@ -354,7 +354,13 @@ signature* BasicMesh::constructSignature(Vertex_const_handle vh,double rotation)
 	sig[0].K = k1*k2;
 	sig[0].H = (k1 + k2)/2;
 	sig[0].C = sqrt((k1 * k1 + k2 * k2)/2);
-	sig[0].S = atan((k1 + k2)/(k1 - k2));
+
+	if (k1 > k2 + 0.0001)
+		sig[0].S = atan((k1 + k2)/(k1 - k2));
+	else if (k1 < k2 - 0.0001)
+		sig[0].S = atan((k1 + k2)/(k2 - k1));
+	else
+		sig[0].S = 1;
 	
 	sig[0].normal = cross_product(vertex2d1_map[vh],vertex2d2_map[vh]);
 	sig[0].normal = sig[0].normal / sqrt(sig[0].normal.squared_length());
@@ -407,8 +413,10 @@ void BasicMesh::findSignatureAll(){
 
 		sig = constructSignature(vh,0);
 
-		if (sig != NULL)
+		if (sig != NULL){
 			signatureMap.insert(pair<Vertex_const_handle, signature*>(vh,sig));
+			//cout<<"feature valid"<<endl;
+		}
 	}
 
 	deleteMarchList();
@@ -477,22 +485,23 @@ float compareSignature(signature* sig1,signature* sig2){
 		ans += (x1(i)-x2(i))*(x1(i)-x2(i));
 	//cout<<"dif: "<<ans<<endl;
 	*/
-	float dis1 = (sig1[0].normal - sig2[0].normal).squared_length();
-	float dis2 = (sig1[0].C - sig2[0].C) * (sig1[0].C - sig2[0].C);
-	float dis3 = (sig1[0].S - sig2[0].S) * (sig1[0].S - sig2[0].S);
+	//float dis1 = (sig1[0].normal - sig2[0].normal).squared_length();
+
+	float dis2 = sqrt((sig1[0].C - sig2[0].C) * (sig1[0].C - sig2[0].C));
+	float dis3 = sqrt((sig1[0].S - sig2[0].S) * (sig1[0].S - sig2[0].S));
 
 
-	return dis1 + dis2 + dis3;
+	return dis2 + dis3;
 }
 
-void BasicMesh::findCorrespondenceBothWay(BasicMesh* secondMesh,double featWeight){
+void BasicMesh::findCorrespondenceBothWay(BasicMesh* secondMesh,double euc_weight){
 	int affinityM = vertexNum;
 	int affinityN = secondMesh->vertexNum;
 
 	PolyhedralSurf::Vertex_const_iterator vb = secondMesh->P.vertices_begin();
 	PolyhedralSurf::Vertex_const_iterator ve = secondMesh->P.vertices_end();
 	PolyhedralSurf::Vertex_const_handle vh1,vh2;
-	float dis,dif,normalDif;
+	float dif,euc_dis,feat_dis,normal_dis;
 
 	if (affinity != NULL) delete[] affinity;
 	affinity = new float[affinityM * affinityN];
@@ -510,11 +519,8 @@ void BasicMesh::findCorrespondenceBothWay(BasicMesh* secondMesh,double featWeigh
 		//cout<<"Working on vertex: "<<i<<endl;
 
 		vh1 = vb;
-
 		iterSig = signatureMap.find(vh1);
 		if (iterSig == signatureMap.end()) continue;
-
-		//cout<<"1!"<<endl;
 
 		signature* sig1 = iterSig->second;
 		if (sig1 == NULL) continue;
@@ -529,28 +535,18 @@ void BasicMesh::findCorrespondenceBothWay(BasicMesh* secondMesh,double featWeigh
 			signature* sig2 = iterSig->second;
 			if (sig2 == NULL) continue;
 
-			dif = compareSignature(sig1, sig2);
+			feat_dis = compareSignature(sig1, sig2);
+			euc_dis = computeEuclideanDis(vh1->point(),vh2->point());
+			normal_dis = acos(sig1->normal*sig2->normal/sqrt(sig1->normal.squared_length()*sig2->normal.squared_length()));
+			
+			if (euc_dis > DISTHRESHOLD) continue;
+			if (normal_dis > PI /2 * 0.8) continue; //don't match normal different larger than pi/2*0.8
 
-			/*
-			rotateSig(sig1);
-			if (compareSignature(sig1, sig2) < dif)
-				dif = compareSignature(sig1, sig2);
-			*/
-
-			dis = computeEuclideanDis(vh1->point(),vh2->point());
-
-			double disT = SIGMOIDALPHA / (1 + exp(-SIGMOIDSIGMA*(dis-DISTHRESHOLD)));
-
-			if (disT > SIGMOIDALPHA - 20) continue;
-
-			float theta = acos(sig1->normal*sig2->normal/sqrt(sig1->normal.squared_length()*sig2->normal.squared_length()));
-			double normalDifT = SIGMOIDALPHA / (1 + exp(-20*(theta-0.8)));
-
-			if (normalDifT > SIGMOIDALPHA - 20) continue;
-
-			dif = dif * featWeight + dis;
+			double normal_weight = 1;
+			dif = euc_dis * euc_weight + normal_dis * normal_weight + feat_dis;
 
 			VAL(affinity,i,j,affinityN) = dif;
+			//cout<<"comparison valid"<<endl;
 		}
 	}
 }
@@ -599,7 +595,44 @@ void BasicMesh::findMatch2(BasicMesh* secondMesh, int surfaceIdx){
 			matchWeight[surfaceIdx][queue[k].i] = exp(-(3.0/DISTHRESHOLD)*queue[k].value);
 			//matchWeight[surfaceIdx][queue[k].i] = min_zenyo(1,1/ queue[k].value);
 
-			bestMatch[surfaceIdx][queue[k].i] = queue[k].j;
+
+			PolyhedralSurf::Vertex_const_handle vh = Surface[surfaceIdx]->vertexIndex[queue[k].j];
+			PolyhedralSurf::Vertex_const_handle source = vertexIndex[queue[k].i];
+			PolyhedralSurf::Halfedge_around_vertex_const_circulator tempHfe = vh->vertex_begin();
+			Vector_3 minTarget;
+			double minDis = 1000;
+
+			for (int i = 0; i< vh->degree(); i++){
+				if (tempHfe->is_border()){
+					tempHfe++;
+					continue;
+				}
+
+				PolyhedralSurf::Halfedge_around_facet_const_circulator shf = tempHfe->facet()->facet_begin();
+
+				PolyhedralSurf::Vertex_const_handle v1 = shf->vertex();
+				shf++;
+				PolyhedralSurf::Vertex_const_handle v2 = shf->vertex();
+				shf++;
+				PolyhedralSurf::Vertex_const_handle v3 = shf->vertex();
+				
+				Vector_3 tri[3] = {Vector_3(v1->point().x(),v1->point().y(),v1->point().z()),
+					               Vector_3(v2->point().x(),v2->point().y(),v2->point().z()),
+								   Vector_3(v3->point().x(),v3->point().y(),v3->point().z())};
+
+				Vector_3 sourcePos = Vector_3(source->point().x(),source->point().y(),source->point().z());
+
+				Vector_3 target = closesPointOnTriangle(tri,sourcePos);
+				Vector_3 dis = target - sourcePos;
+				if (dis.squared_length() < minDis){
+					minTarget = target;
+					minDis = dis.squared_length();
+ 				}
+
+				tempHfe++;
+			}
+
+			bestMatch[surfaceIdx][queue[k].i] = minTarget;
 			//if (queue[k].value < 0.2) break;
 		}
 	
@@ -607,7 +640,6 @@ void BasicMesh::findMatch2(BasicMesh* secondMesh, int surfaceIdx){
 	delete[] ibool;
 	delete[] jbool;
 }
-
 
 void BasicMesh::outputAffinity(BasicMesh* secondMesh, int surfaceIdx){
 	int affinityM = vertexNum;
@@ -620,7 +652,7 @@ void BasicMesh::outputAffinity(BasicMesh* secondMesh, int surfaceIdx){
 	itoa(idx,val1,10);
 	itoa(surfaceIdx,val2,10);
 
-	string filename = string(val1)+"_"+string(val2)+".txt";
+	string filename = string(val1)+"_"+string(val2)+"_affinity.txt";
 	fout.open(filename); 
 
 	
@@ -641,7 +673,7 @@ void BasicMesh::outputForce(){
 	char val1[10];
 	itoa(idx,val1,10);
 
-	string filename = string(val1)+".txt";
+	string filename = string(val1)+"_force.txt";
 	fout.open(filename); 
 
 	for (int i = 0; i< affinityM; i++){
@@ -651,4 +683,36 @@ void BasicMesh::outputForce(){
 
 	fout.close();
 
+}
+
+void BasicMesh::outputFeature(){
+	int affinityM = vertexNum;
+	PolyhedralSurf::Vertex_const_iterator vb = P.vertices_begin();
+	PolyhedralSurf::Vertex_const_iterator ve = P.vertices_end();
+
+	std::map<Vertex_const_handle, signature*>::iterator iterSig;
+
+	ofstream fout;
+	char val1[10];
+	itoa(idx,val1,10);
+	string filename = string(val1)+"_feature.txt";
+	fout.open(filename); 
+
+
+	for (int i = 0; vb != ve; vb++,i++){
+		fout<<i<<' ';
+		iterSig = signatureMap.find(vb);
+
+		if (iterSig == signatureMap.end()){
+			fout<<endl;
+			continue;
+		}
+		else{
+			//cout<<"extracting feature"<<endl;
+			signature* sig = iterSig->second;
+			fout<<sig->C<<' '<<sig->S<<' '<<sig->normal<<endl;
+		}
+	}
+
+	fout.close();
 }
