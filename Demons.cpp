@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
 			TEXTURE_RANGE = atoi(argv[11]);
 		}
 		cout<<"STRETCHING WEIGHT: "<<REGWEIGHT<<" -BENDING WEIGHT: "<<BENDWEIGHT<<" -EUCLIDEAN THRESHOLD: "
-			<<DISTHRESHOLD<<" -EUCLIDEAN DISTANCE WEIGHT: "<<EUCLWEIGHT
+			<<DISTHRESHOLD<<" -GEOMETRIC FEATURE WEIGHT: "<<EUCLWEIGHT
 			<<" -YOUNG: "<<YOUNG<<" -POSSION: "<<POISSON<<" -MESHLAB: "<<MESHLABOPTION<<endl;
 	}else{
 		cout<<"not enough parameters, refer ReadMe.txt";

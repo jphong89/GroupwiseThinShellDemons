@@ -494,7 +494,7 @@ float compareSignature(signature* sig1,signature* sig2){
 	return dis2 + dis3;
 }
 
-void BasicMesh::findCorrespondenceBothWay(BasicMesh* secondMesh,double euc_weight){
+void BasicMesh::findCorrespondenceBothWay(BasicMesh* secondMesh,double geo_weight){
 	int affinityM = vertexNum;
 	int affinityN = secondMesh->vertexNum;
 
@@ -543,7 +543,8 @@ void BasicMesh::findCorrespondenceBothWay(BasicMesh* secondMesh,double euc_weigh
 			if (normal_dis > PI /2 * 0.8) continue; //don't match normal different larger than pi/2*0.8
 
 			double normal_weight = 1;
-			dif = euc_dis * euc_weight + normal_dis * normal_weight + feat_dis;
+			double euc_weight = 1;
+			dif = euc_dis * euc_weight + normal_dis * normal_weight + feat_dis * geo_weight;
 
 			VAL(affinity,i,j,affinityN) = dif;
 			//cout<<"comparison valid"<<endl;
@@ -605,7 +606,9 @@ void BasicMesh::findMatch2(BasicMesh* secondMesh, int surfaceIdx){
 			for (int i = 0; i< vh->degree(); i++){
 				if (tempHfe->is_border()){
 					tempHfe++;
-					continue;
+					matchWeight[surfaceIdx][queue[k].i] = 0;
+					minTarget = Vector_3(0,0,0);
+					break;
 				}
 
 				PolyhedralSurf::Halfedge_around_facet_const_circulator shf = tempHfe->facet()->facet_begin();
