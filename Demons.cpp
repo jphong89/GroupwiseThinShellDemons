@@ -171,11 +171,11 @@ int main(int argc, char* argv[])
 			if (i != j) {
 				Surface[i]->findCorrespondenceBothWay(Surface[j],EUCLWEIGHT);
 				Surface[i]->findMatch2(Surface[j],j);
-				//Surface[i]->outputAffinity(Surface[j],j);
+				/*Surface[i]->outputAffinity(Surface[j],j);*/
 			}
 
 		Surface[i]->summerizeForce();
-		Surface[i]->outputForce();
+		//Surface[i]->outputForce();
 	}
 	/////////////////////////////* rendering and optimization *////////////////////////////////////////////////////////////
 	startOptimization(); //direct begin for script

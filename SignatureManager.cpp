@@ -540,7 +540,7 @@ void BasicMesh::findCorrespondenceBothWay(BasicMesh* secondMesh,double geo_weigh
 			normal_dis = acos(sig1->normal*sig2->normal/sqrt(sig1->normal.squared_length()*sig2->normal.squared_length()));
 			
 			if (euc_dis > DISTHRESHOLD) continue;
-			if (normal_dis > PI /2 * 0.8) continue; //don't match normal different larger than pi/2*0.8
+			if (normal_dis > PI /2 * 0.99) continue; //don't match normal different larger than pi/2*0.8
 
 			double normal_weight = 1;
 			double euc_weight = 1;
