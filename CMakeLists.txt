@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 2.8 FATA_ERROR )
+cmake_minimum_required( VERSION 2.8 FATAL_ERROR )
 project( registration )
 
 set(warnings "-Wall -Werror -Wextra")
@@ -46,12 +46,11 @@ include_directories( ${EIGEN} )
 # FIND LBFGS
 #########################################################
 find_path(LBFGS_INCLUDE_DIR lbfgs.h )
-message( ${LBFGS_INCLUDE_DIR} )
+#message( ${LBFGS_INCLUDE_DIR} )
 include_directories( ${LBFGS_INCLUDE_DIR} )
 find_library(LBFGS_LIBRARY NAMES liblbfgs.so )
-message( ${LBFGS_LIBRARY} )
-target_link_libraries( sample ${LBFGS_LIBRARY} )
-
-
+#message( ${LBFGS_LIBRARY} )
 
 add_executable( demon Demon.cpp )
+target_link_libraries( demon ${LBFGS_LIBRARY} )
+#target_link_libraries( sample ${LBFGS_LIBRARY} )

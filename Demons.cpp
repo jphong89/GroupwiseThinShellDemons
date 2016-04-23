@@ -61,7 +61,7 @@ float minx,miny,minz;
 float maxx,maxy,maxz;
 float max_all;
 
-pthread_mutex_t lock;
+//pthread_mutex_t lock;
 
 void readFileList(string list){
 	ifstream fin;

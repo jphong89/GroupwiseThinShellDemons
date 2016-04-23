@@ -1,7 +1,7 @@
 #pragma once
 #include "MeshObject.h"
 #include <gl\glut.h>
-#include "pthread.h"
+//#include "pthread.h"
 
 extern BasicMesh** Surface;
 extern int surfaceNum;
@@ -31,20 +31,8 @@ extern double thetaDif1;
 extern double thetaDif2;
 extern double thetaDif3;
 extern float geodesicDistance;
-extern pthread_mutex_t lock;
+//extern pthread_mutex_t lock;
 
-// void drawSurface(BasicMesh* mesh,int deform);
-// void drawExtra(BasicMesh*);
-// void display();
-// void reshape(int w,int h);
-// void init();
-// int beginGlut(int argc, char* argv[]);
-// void ProcessSpecialKeyboead(int key, int x, int y);
-// void ProcessKeyboard(unsigned char key,int x,int y);
-// void Mouse(int button, int state, int x, int y);
-// void paintColor(BasicMesh*,threeTuple,threeTuple,threeTuple);
-// PolyhedralSurf::Vertex_const_handle mouseEvent(BasicMesh*,threeTuple);
-// void drawSphere(GLfloat xx, GLfloat yy, GLfloat zz, GLfloat radius, GLfloat M, GLfloat N);
 
 //CPU
 double evaluateError(double bestError);
