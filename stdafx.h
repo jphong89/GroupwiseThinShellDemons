@@ -3,9 +3,11 @@
 // are changed infrequently
 //
 
-#pragma once
+//#pragma once
 
 //#include "targetver.h"
+#ifndef __STDAFX_H__
+#define __STDAFX_H__
 
 #include <stdio.h>
 // #include <tchar.h>
@@ -52,3 +54,4 @@ extern int TEXTURE_RANGE;
 extern int GEOMETRIC_RANGE;
 
 // TODO: reference additional headers your program requires here
+#endif // __STDAFX_H__
