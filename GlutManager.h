@@ -1,7 +1,5 @@
 #pragma once
 #include "MeshObject.h"
-#include <gl\glut.h>
-//#include "pthread.h"
 
 extern BasicMesh** Surface;
 extern int surfaceNum;
