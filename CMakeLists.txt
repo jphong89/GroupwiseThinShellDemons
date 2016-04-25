@@ -27,9 +27,15 @@ find_path(LBFGS_INCLUDE_DIR lbfgs.h )
 include_directories( ${LBFGS_INCLUDE_DIR} )
 find_library(LBFGS_LIBRARY NAMES liblbfgs.so )
 
+find_package(Boost 1.54.0)
+if(Boost_FOUND)
+    message(${Boost_INCLUDE_DIRS})
+    include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
+
 file(GLOB SOURCES "*.cpp")
 message( ${SOURCES} )
 add_executable( demon ${SOURCES} )
 target_link_libraries( demon ${LBFGS_LIBRARY} )
 target_link_libraries( demon ${CGAL_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES})
-target_link_libraries( demon ${BOOST_LIBRARY} )

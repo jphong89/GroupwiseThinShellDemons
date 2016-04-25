@@ -32,11 +32,11 @@ static int progress(
 		cout<<"Bending: "<<facetBending<<" Stretching: "<<facetStretching<<" Link: "<<distantLink<<endl;
 		cout<<thetaDif1<<' '<<thetaDif2<<' '<<thetaDif3<<endl;
 
-		QueryPerformanceFrequency(&tc);
-		QueryPerformanceCounter(&t2);
-		cout<<"Time Elapse:"<<(t2.QuadPart - t1.QuadPart)*1.0/tc.QuadPart * 1000<<endl;
-		cout<<endl;
-		t1 = t2;
+		//QueryPerformanceFrequency(&tc);
+		//QueryPerformanceCounter(&t2);
+		//cout<<"Time Elapse:"<<(t2.QuadPart - t1.QuadPart)*1.0/tc.QuadPart * 1000<<endl;
+		//cout<<endl;
+		//t1 = t2;
 	}
 	return 0;
 }
