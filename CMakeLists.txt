@@ -1,18 +1,54 @@
-cmake_minimum_required( VERSION 2.8 FATAL_ERROR )
-project( registration )
+# Created by the script cgal_create_cmake_script_with_options
+# This is the CMake script for compiling a set of CGAL applications.
 
-#########################################################
-# FIND CGAL
-#########################################################
-find_package(CGAL REQUIRED)
-include(${CGAL_USE_FILE})
-#include_directories(${CGAL_INCLUDE_DIRS})
-#link_directories(${CGAL_LIBRARY_DIRS})
-#add_definitions(${CGAL_DEFINITIONS})
-message( ${CGAL_LIBRARY} )
-if(NOT CGAL_FOUND)
-    message(ERROR " CGAL not found!")
-endif(NOT CGAL_FOUND)
+project( Demons )
+
+
+cmake_minimum_required(VERSION 2.6.2)
+if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
+  if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
+    cmake_policy(VERSION 2.8.4)
+  else()
+    cmake_policy(VERSION 2.6)
+  endif()
+endif()
+
+set( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true )
+ 
+if ( COMMAND cmake_policy )
+
+  cmake_policy( SET CMP0003 NEW )  
+
+endif()
+
+# CGAL and its components
+find_package( CGAL QUIET COMPONENTS  )
+
+if ( NOT CGAL_FOUND )
+
+  message(STATUS "This project requires the CGAL library, and will not be compiled.")
+  return()  
+
+endif()
+
+# include helper file
+include( ${CGAL_USE_FILE} )
+
+
+# Boost and its components
+find_package( Boost REQUIRED )
+
+if ( NOT Boost_FOUND )
+
+  message(STATUS "This project requires the Boost library, and will not be compiled.")
+
+  return()  
+
+endif()
+
+# include for local directory
+
+# include for local package
 
 #########################################################
 # FIND EIGEN3
@@ -27,15 +63,13 @@ find_path(LBFGS_INCLUDE_DIR lbfgs.h )
 include_directories( ${LBFGS_INCLUDE_DIR} )
 find_library(LBFGS_LIBRARY NAMES liblbfgs.so )
 
-find_package(Boost 1.54.0)
-if(Boost_FOUND)
-    message(${Boost_INCLUDE_DIRS})
-    include_directories(${Boost_INCLUDE_DIRS})
-endif()
+# Creating entries for target: Demons
+# ############################
 
+add_executable( Demons  ComputationalTools.cpp ComputeGeometricEntity.cpp Demons.cpp Optimization-lbfgs.cpp PolyhedralSurf.cpp SignatureManager.cpp )
 
-file(GLOB SOURCES "*.cpp")
-message( ${SOURCES} )
-add_executable( demon ${SOURCES} )
-target_link_libraries( demon ${LBFGS_LIBRARY} )
-target_link_libraries( demon ${CGAL_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES})
+add_to_cached_list( CGAL_EXECUTABLE_TARGETS Demons )
+
+# Link the executable to CGAL and third-party libraries
+target_link_libraries(Demons   ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
+target_link_libraries( Demons ${LBFGS_LIBRARY} )

@@ -22,9 +22,6 @@ extern bool switch4;
 extern double facetBending;
 extern double facetStretching;
 extern double distantLink;
-//extern LARGE_INTEGER t1;
-//extern LARGE_INTEGER t2;
-//extern LARGE_INTEGER tc;
 extern double thetaDif1;
 extern double thetaDif2;
 extern double thetaDif3;
@@ -38,25 +35,25 @@ void startOptimization();
 void initialDVF();
 
 static int progress(
-	void *instance,
-	const lbfgsfloatval_t *u,
-	const lbfgsfloatval_t *g,
-	const lbfgsfloatval_t fx,
-	const lbfgsfloatval_t xnorm,
-	const lbfgsfloatval_t gnorm,
-	const lbfgsfloatval_t step,
-	int n,
-	int k,
-	int ls
-	);
+        void *instance,
+        const lbfgsfloatval_t *u,
+        const lbfgsfloatval_t *g,
+        const lbfgsfloatval_t fx,
+        const lbfgsfloatval_t xnorm,
+        const lbfgsfloatval_t gnorm,
+        const lbfgsfloatval_t step,
+        int n,
+        int k,
+        int ls
+        );
 
 static lbfgsfloatval_t evaluate(
-	void *instance,
-	const lbfgsfloatval_t *u,
-	lbfgsfloatval_t *g,
-	const int n,
-	const lbfgsfloatval_t step
-	);
+        void *instance,
+        const lbfgsfloatval_t *u,
+        lbfgsfloatval_t *g,
+        const int n,
+        const lbfgsfloatval_t step
+        );
 
 lbfgsfloatval_t penalizeData(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int idx);
 lbfgsfloatval_t penalizeStretch(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int idx);

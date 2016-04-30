@@ -652,11 +652,13 @@ void BasicMesh::outputAffinity(BasicMesh* secondMesh, int surfaceIdx){
 	char val1[10];
 	char val2[10];
 
-	itoa(idx,val1,10);
-	itoa(surfaceIdx,val2,10);
+	//itoa(idx,val1,10);
+    sprintf(val1, "%d", idx);
+	//itoa(surfaceIdx,val2,10);
+    sprintf(val2, "%d", surfaceIdx);
 
 	string filename = string(val1)+"_"+string(val2)+"_affinity.txt";
-	fout.open(filename); 
+	fout.open(filename.c_str()); 
 
 	
 	for (int i = 0; i< affinityM; i++){
@@ -674,10 +676,10 @@ void BasicMesh::outputForce(){
 
 	ofstream fout;
 	char val1[10];
-	itoa(idx,val1,10);
-
+	//itoa(idx,val1,10);
+    sprintf( val1, "%d", idx);
 	string filename = string(val1)+"_force.txt";
-	fout.open(filename); 
+	fout.open(filename.c_str()); 
 
 	for (int i = 0; i< affinityM; i++){
 		fout<<targetPos[i]<<' '<<overallWeight[i]<<endl;
@@ -697,9 +699,10 @@ void BasicMesh::outputFeature(){
 
 	ofstream fout;
 	char val1[10];
-	itoa(idx,val1,10);
+	//itoa(idx,val1,10);
+    sprintf(val1, "%d", idx);
 	string filename = string(val1)+"_feature.txt";
-	fout.open(filename); 
+	fout.open(filename.c_str()); 
 
 
 	for (int i = 0; vb != ve; vb++,i++){

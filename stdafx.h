@@ -5,38 +5,22 @@
 
 //#pragma once
 
-//#include "targetver.h"
 #ifndef __STDAFX_H__
 #define __STDAFX_H__
 
 #include <stdio.h>
-// #include <tchar.h>
-
+#include <cstdlib>
 #define VAL(SA,ia,ja,na) SA[(ia)*(na)+(ja)]
-
-#define PI 3.141592654
-#define EPS (1e-6)
+const double PI = 3.141592654;
+const double EPS = 1e-6;
 #define max_zenyo(a,b)            (((a) > (b)) ? (a) : (b))
 #define min_zenyo(a,b)            (((a) < (b)) ? (a) : (b))
 #define clamp_zenyo(x,y,z)              (min_zenyo(max_zenyo((x),(y)),(z)))
 
-//#define EUCLWEIGHT 1
 #define DIR_NUM 8
-
-// #define REPELTHRESHOLD 0.5 // inactive: used for avoiding collision
-// #define FEATDIM (59 + 27) // inactive: feature dimens2ion
-   #define GEODECISDIS 4.0 // inactive: length of the "spider leg"
-// #define DISTHRESHOLD 16.0 // we don't want to match things too far away
-// #define SIGMOIDSIGMA 1 //inactive
-// #define SIGMOIDALPHA 50 //inactive
-// #define SIMILARITY_SCALE 4 //inactive
-
+#define GEODECISDIS 4.0 // inactive: length of the "spider leg"
 #define STRETCH_MIU (YOUNG/2/(1+POISSON)) //inactive 
 #define STRETCH_LAMBDA (YOUNG*POISSON/(1+POISSON)/(1-2*POISSON)) //inactive
-//#define YOUNG 2
-//#define POISSON 0.05
-//#define REGWEIGHT 40 //stretching weight
-//#define BENDWEIGHT 200  //bending weight
 #define LINKWEIGHT 200  //structural links weight
 
 

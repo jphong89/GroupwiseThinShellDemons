@@ -5,9 +5,6 @@
 #include <fstream>
 using namespace std;
 
-// double* tempG;
-// double* tempS;
-
 static int progress(
 	void *instance,
 	const lbfgsfloatval_t *tu,
@@ -32,11 +29,6 @@ static int progress(
 		cout<<"Bending: "<<facetBending<<" Stretching: "<<facetStretching<<" Link: "<<distantLink<<endl;
 		cout<<thetaDif1<<' '<<thetaDif2<<' '<<thetaDif3<<endl;
 
-		//QueryPerformanceFrequency(&tc);
-		//QueryPerformanceCounter(&t2);
-		//cout<<"Time Elapse:"<<(t2.QuadPart - t1.QuadPart)*1.0/tc.QuadPart * 1000<<endl;
-		//cout<<endl;
-		//t1 = t2;
 	}
 	return 0;
 }
@@ -64,7 +56,8 @@ void startOptimization(){
 			int ret = lbfgs(Surface[i]->vertexNum * 3, tempU, &fx, evaluate, progress, (void*)(&idx), &param);
 
 			char prefix[5];
-			itoa(iter,prefix,10);
+			//itoa(iter,prefix,10);
+            sprintf(prefix, "%d", iter);
 			Surface[i]->if_name = fileName[i]+prefix+".off";
 			writeOFF(Surface[i],fileName[i]+prefix+".off",i);
 			cout<<"Finishing surface "<<i<<endl;

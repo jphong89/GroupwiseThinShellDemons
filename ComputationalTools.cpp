@@ -111,7 +111,7 @@ float computeArea(PolyhedralSurf::Facet_const_handle f){
 void writeOFF(BasicMesh* mesh, string filename, int idx){
 
 	ofstream file;
-	file.open(filename);
+	file.open(filename.c_str());
 
 	file<<"OFF"<<endl;
 	file<<mesh->P.size_of_vertices()<<' '<<mesh->P.size_of_facets()<<" 0"<<endl;
@@ -137,7 +137,7 @@ void writeOFF(BasicMesh* mesh, string filename, int idx){
 
 void readOFF(string filename,double* u){
 	ifstream fin;
-	fin.open(filename);
+	fin.open(filename.c_str());
 
 	string newLine;
 	std::getline(fin,newLine);

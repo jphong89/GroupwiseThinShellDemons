@@ -600,7 +600,7 @@ void BasicMesh::summerizeForce(){
 
 void BasicMesh::constructLandmark(string filename){
 	ifstream fin;
-	fin.open(filename);
+	fin.open(filename.c_str());
 	double temp;
 
 	landmarkNum = new int[surfaceNum];

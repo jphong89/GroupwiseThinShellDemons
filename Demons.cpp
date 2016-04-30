@@ -39,7 +39,6 @@ double regweight;
 double facetBending = 0;
 double facetStretching = 0;
 double distantLink = 0;
-LARGE_INTEGER t1,t2,tc;
 double thetaDif1,thetaDif2,thetaDif3;
 double facetTrace,facetDet;
 
@@ -66,7 +65,7 @@ float max_all;
 void readFileList(string list){
 	ifstream fin;
 
-	fin.open(list);
+	fin.open(list.c_str());
 
 	fileName = new string[surfaceNum];
 
@@ -82,7 +81,7 @@ void readFileList(string list){
 void readMatchingList(string list){
 	ifstream fin;
 
-	fin.open(list);
+	fin.open(list.c_str());
 
 	landmarkFile = new string[surfaceNum];
 
@@ -138,8 +137,8 @@ int main(int argc, char* argv[])
 		cout<<"not enough parameters, refer ReadMe.txt";
 	}
 
-	omp_set_dynamic(0);
-	omp_set_num_threads(6);
+	//omp_set_dynamic(0);
+	//omp_set_num_threads(6);
 	int i;
 	////////////////////////////////////*read & translate surfaces */////////////////////////////////////////////
 	Surface = new BasicMesh*[surfaceNum];
