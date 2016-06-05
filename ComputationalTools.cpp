@@ -290,20 +290,23 @@ float computeEuclideanDis(threeTuple a ,threeTuple b){
 }
 
 float computeAngle(Point_3 V1,Point_3 V2,Point_3 V3,Point_3 V4){
-	Vector_3 v1(V1,V4);
-	Vector_3 v2(V1,V2);
-	Vector_3 v3(V1,V3);
+	double theta1;
 
-	Vector_3 n2 = cross_product(v2,v3);
-	double sm2 = n2.squared_length();
-	double sq2 = sqrt(sm2);
-	double p1 = v1*n2;
-	double dis1 = p1/sq2;
+	Vector_3 b1(V1,V2);
+	Vector_3 b2(V2,V3);
+	Vector_3 s1(V1,V4);
 
-	double p2 = (v1*v2)/sqrt(v2.squared_length());
-	double dis2 = sqrt(v1.squared_length()-p2*p2);
-	
-	return dis1/dis2;
+	Vector_3 nm = cross_product(b1,b2);
+	Vector_3 n1 = cross_product(s1,b1);
+
+	double sign1 = s1*nm;
+	double x1 = n1*nm / (sqrt(n1.squared_length()+EPS)*sqrt(nm.squared_length()+EPS));
+	if (sign1 > 0) x1 = (2 - x1);
+
+	if (x1 <= 1) theta1 = (-0.69813170079773212 * x1 * x1 - 0.87266462599716477) * x1 + 1.5707963267948966;
+	else	     theta1 = (-0.69813170079773212 * (x1-2) * (x1-2) - 0.87266462599716477) * (x1-2) - 1.5707963267948966;
+
+	return theta1;
 }
 
 double computeAngle(Vector_3 v1,Vector_3 v2){
