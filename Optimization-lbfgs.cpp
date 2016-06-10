@@ -121,10 +121,13 @@ static lbfgsfloatval_t evaluate(
 	double data = penalizeData(u,g,idx);
 
 	/* stretching */
-	double stretching = penalizeStretch(u,g,idx);
+	double stretching = penalizeStretchQuadratic(u,g,idx);
+	//double stretching = penalizeStretch(u,g,idx);
 	//double stretching = 0;
+	
 	/* bending */
 	double bending = penalizeBendQuadratic(u,g,idx);
+	//double bending = penalizeBendAngleLP(u,g,idx);
 	//double bending = 0;
 
 	double landmark  = 0;
@@ -162,13 +165,10 @@ lbfgsfloatval_t penalizeData(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int i
 	return fx;
 }
 
-lbfgsfloatval_t penalizeStretch(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int surfaceIdx){
+lbfgsfloatval_t penalizeStretchQuadratic(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int surfaceIdx){
+	    // edge-based  stretching energy
 	double stretching = 0;
-
-	if (REGWEIGHT < 0){ // edge-based  stretching energy
 		for (int i=0; i < Surface[surfaceIdx]->edgeNum/2;i++){
-
-
 			edge he = Surface[surfaceIdx]->edgeList[i];
 
 			double weight =  REGWEIGHT * 2 * he.stretchWeight;
@@ -186,7 +186,15 @@ lbfgsfloatval_t penalizeStretch(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, in
 
 			stretching += (deformVec.squared_length() * weight);
 		}
-	}else{ //triangle-based stretching energy
+
+	facetStretching = stretching;
+	return stretching;
+}
+
+lbfgsfloatval_t penalizeStretch(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int surfaceIdx){
+	double stretching = 0;
+
+	{ //triangle-based stretching energy
 		facet* faceList = Surface[surfaceIdx]->faceList;
 
 		int idx;
@@ -300,6 +308,126 @@ lbfgsfloatval_t penalizeBendQuadratic(const lbfgsfloatval_t *tu, lbfgsfloatval_t
 
 	facetBending = fv;
 	return fv;
+}
+
+lbfgsfloatval_t penalizeBendAngleLP(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int surfaceIdx){
+	double bending = 0;
+	facet* faceList = Surface[surfaceIdx]->faceList;
+
+	Point_3 newV1,newV2,newV3,newNB1,newNB2,newNB3;
+	double theta1,theta2,theta3;
+	threeTuple db1,db2,db3,ds1,ds2,ds3,dnm,dn1,dn2,dn3;
+	double dx1,dx2,dx3,Dtheta1,Dtheta2,Dtheta3,DSOD_00,DSOD_01,DSOD_10,DSOD_11;
+	double weight,Dbend,trace,trace_2;
+
+	for (int idx=0; idx < Surface[surfaceIdx]->faceNum;idx++){
+		facet f = faceList[idx];
+		if (f.isBorder) continue;
+		weight = f.area * BENDWEIGHT;
+
+		newV1 = f.v1->point() + Vector_3(u[f.index[1]*3],u[f.index[1]*3+1],u[f.index[1]*3+2]);
+		newV2 = f.v2->point() + Vector_3(u[f.index[2]*3],u[f.index[2]*3+1],u[f.index[2]*3+2]);
+		newV3 = f.v3->point() + Vector_3(u[f.index[3]*3],u[f.index[3]*3+1],u[f.index[3]*3+2]);
+		newNB1 = f.nb1->point() + Vector_3(u[f.nbIdx1*3],u[f.nbIdx1*3+1],u[f.nbIdx1*3+2]);
+		newNB2 = f.nb2->point() + Vector_3(u[f.nbIdx2*3],u[f.nbIdx2*3+1],u[f.nbIdx2*3+2]);
+		newNB3 = f.nb3->point() + Vector_3(u[f.nbIdx3*3],u[f.nbIdx3*3+1],u[f.nbIdx3*3+2]);
+
+		/* -------------- compute angle ------------------------- */
+		/* ------------------------------------------------------ */
+		Vector_3 b1(newV1,newV2);
+		Vector_3 b2(newV2,newV3);
+		Vector_3 b3(newV3,newV1);
+		Vector_3 s1(newV1,newNB1);
+		Vector_3 s2(newV2,newNB2);
+		Vector_3 s3(newV3,newNB3);
+
+		Vector_3 nm = cross_product(b1,b2);
+		Vector_3 n1 = cross_product(s1,b1);
+		Vector_3 n2 = cross_product(s2,b2);
+		Vector_3 n3 = cross_product(s3,b3);
+
+		double sign1 = s1*nm;
+		double sign2 = s2*nm;
+		double sign3 = s3*nm;
+
+		double x1 = n1*nm / (sqrt(n1.squared_length()+EPS)*sqrt(nm.squared_length()+EPS));
+		double x2 = n2*nm / (sqrt(n2.squared_length()+EPS)*sqrt(nm.squared_length()+EPS));
+		double x3 = n3*nm / (sqrt(n3.squared_length()+EPS)*sqrt(nm.squared_length()+EPS));
+
+		if (sign1 > 0) x1 = (2 - x1);
+		if (sign2 > 0) x2 = (2 - x2);
+		if (sign3 > 0) x3 = (2 - x3);
+
+		if (x1 <= 1) theta1 = (-0.69813170079773212 * x1 * x1 - 0.87266462599716477) * x1 + 1.5707963267948966;
+		else	     theta1 = (-0.69813170079773212 * (x1-2) * (x1-2) - 0.87266462599716477) * (x1-2) - 1.5707963267948966;
+		if (x2 <= 1) theta2 = (-0.69813170079773212 * x2 * x2 - 0.87266462599716477) * x2 + 1.5707963267948966;
+		else	     theta2 = (-0.69813170079773212 * (x2-2) * (x2-2) - 0.87266462599716477) * (x2-2) - 1.5707963267948966;
+		if (x3 <= 1) theta3 = (-0.69813170079773212 * x3 * x3 - 0.87266462599716477) * x3 + 1.5707963267948966;
+		else	     theta3 = (-0.69813170079773212 * (x3-2) * (x3-2) - 0.87266462599716477) * (x3-2) - 1.5707963267948966;
+
+		/* */
+		double SOD_00 = (theta1-f.theta1) * f.SO1[0][0] + (theta2-f.theta2) * f.SO2[0][0] + (theta3-f.theta3) * f.SO3[0][0];
+		double SOD_01 = (theta1-f.theta1) * f.SO1[0][1] + (theta2-f.theta2) * f.SO2[0][1] + (theta3-f.theta3) * f.SO3[0][1];
+		double SOD_10 = (theta1-f.theta1) * f.SO1[1][0] + (theta2-f.theta2) * f.SO2[1][0] + (theta3-f.theta3) * f.SO3[1][0];
+		double SOD_11 = (theta1-f.theta1) * f.SO1[1][1] + (theta2-f.theta2) * f.SO2[1][1] + (theta3-f.theta3) * f.SO3[1][1];
+
+
+			trace = (SOD_00 + SOD_11);
+			trace_2 = SOD_00*SOD_00 + 2*SOD_01*SOD_10 + SOD_11*SOD_11;
+			bending += weight *YOUNG/(1-POISSON*POISSON)*((1-POISSON)*trace_2+POISSON*trace*trace);
+		/* -------------- compute gradient ------------------------- */
+		/* --------------------------------------------------------- */
+
+		for (int i = 1; i < 7; i++)
+			for (int j = 1; j < 4; j++){
+				/* */
+				db1 = computeGradient(1,i,j);db2 = computeGradient(2,i,j);db3 = computeGradient(3,i,j);
+				ds1 = computeGradient(4,i,j);ds2 = computeGradient(5,i,j);ds3 = computeGradient(6,i,j);
+
+				dnm = computeCrossProductGradient(b1,b2,db1,db2);
+				dn1 = computeCrossProductGradient(s1,b1,ds1,db1);
+				dn2 = computeCrossProductGradient(s2,b2,ds2,db2);
+				dn3 = computeCrossProductGradient(s3,b3,ds3,db3);
+
+				dx1 = computeDotProductGradient(n1,nm,dn1,dnm);
+				dx2 = computeDotProductGradient(n2,nm,dn2,dnm);
+				dx3 = computeDotProductGradient(n3,nm,dn3,dnm);
+
+				if (sign1 > 0) dx1 = -dx1;
+				if (sign2 > 0) dx2 = -dx2;
+				if (sign3 > 0) dx3 = -dx3;
+
+				if (x1 <= 1) Dtheta1 = (-3 * 0.69813170079773212 * x1 * x1 - 0.87266462599716477)  * dx1;
+				else		 Dtheta1 = (-3 * 0.69813170079773212 * (x1-2) * (x1-2) - 0.87266462599716477)  * dx1;
+				if (x2 <= 1) Dtheta2 = (-3 * 0.69813170079773212 * x2 * x2 - 0.87266462599716477)  * dx2;
+				else		 Dtheta2 = (-3 * 0.69813170079773212 * (x2-2) * (x2-2) - 0.87266462599716477)  * dx2;
+				if (x3 <= 1) Dtheta3 = (-3 * 0.69813170079773212 * x3 * x3 - 0.87266462599716477)  * dx3;
+				else		 Dtheta3 = (-3 * 0.69813170079773212 * (x3-2) * (x3-2) - 0.87266462599716477)  * dx3;
+
+				DSOD_00 = Dtheta1 * f.SO1[0][0] + Dtheta2 * f.SO2[0][0] + Dtheta3 * f.SO3[0][0];
+				DSOD_01 = Dtheta1 * f.SO1[0][1] + Dtheta2 * f.SO2[0][1] + Dtheta3 * f.SO3[0][1];
+				DSOD_10 = Dtheta1 * f.SO1[1][0] + Dtheta2 * f.SO2[1][0] + Dtheta3 * f.SO3[1][0];
+				DSOD_11 = Dtheta1 * f.SO1[1][1] + Dtheta2 * f.SO2[1][1] + Dtheta3 * f.SO3[1][1];
+
+					Dbend = weight * YOUNG/(1-POISSON*POISSON)*
+						((1-POISSON)*(2*SOD_00*DSOD_00+2*SOD_01*DSOD_10+2*DSOD_01*SOD_10+2*SOD_11*DSOD_11)+
+						POISSON*2*trace*(DSOD_00+DSOD_11));
+				//Dbend = weight * (2*SOD_00*DSOD_00 + 2*SOD_01*DSOD_01 + 2*SOD_10*DSOD_10 + 2*SOD_11*DSOD_11);
+
+				if (i <= 3)
+					g[f.index[i]*3+j-1] += Dbend;
+				else if (i == 4)
+					g[f.nbIdx1*3+j-1] += Dbend;
+				else if (i == 5)
+					g[f.nbIdx2*3+j-1] += Dbend;
+				else if (i == 6)
+					g[f.nbIdx3*3+j-1] += Dbend;
+			}
+
+	}
+
+	facetBending = bending;
+	return bending;
 }
 
 lbfgsfloatval_t penalizeBend(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int idx){
@@ -663,3 +791,66 @@ double computeDetGradient(int i,int j,Point_3 v1,Point_3 v2,Point_3 v3,Point_3 v
 
 	return Ddet;
 }
+
+inline threeTuple computeGradient(int v,int i,int j){
+	if (v <= 3){ // computing derivatives w.r.t. b1,b2,b3
+		if (i>3) return threeTuple(0,0,0);
+
+		if (v == i){
+			if (j == 1) return threeTuple(-1,0,0);
+			if (j == 2) return threeTuple(0,-1,0);
+			if (j == 3) return threeTuple(0,0,-1);
+		}
+
+		if ((v+1 == i) || (v-2 == i)){
+			if (j == 1) return threeTuple(1,0,0);
+			if (j == 2) return threeTuple(0,1,0);
+			if (j == 3) return threeTuple(0,0,1);
+		}
+
+		return threeTuple(0,0,0);
+	}
+
+	if (v-3 == i){
+		if (j == 1) return threeTuple(-1,0,0);
+		if (j == 2) return threeTuple(0,-1,0);
+		if (j == 3) return threeTuple(0,0,-1);
+	}
+
+	if (v == i){
+		if (j == 1) return threeTuple(1,0,0);
+		if (j == 2) return threeTuple(0,1,0);
+		if (j == 3) return threeTuple(0,0,1);
+	}
+
+	return threeTuple(0,0,0);
+}
+
+inline threeTuple computeCrossProductGradient(Vector_3 b1,Vector_3 b2,threeTuple db1,threeTuple db2){
+	double dx = (db1.y*b2.z()+b1.y()*db2.z)-(db1.z*b2.y()+b1.z()*db2.y);
+	double dy = (db1.z*b2.x()+b1.z()*db2.x)-(db1.x*b2.z()+b1.x()*db2.z);
+	double dz = (db1.x*b2.y()+b1.x()*db2.y)-(db1.y*b2.x()+b1.y()*db2.x);
+
+	return threeTuple(dx,dy,dz);
+}
+
+inline double computeDotProductGradient(Vector_3 n1,Vector_3 n2,threeTuple dn1,threeTuple dn2){
+	double g = n1*n2;
+	double dg = dn1.x*n2.x() + n1.x()*dn2.x +
+		dn1.y*n2.y() + n1.y()*dn2.y +
+		dn1.z*n2.z() + n1.z()*dn2.z;
+
+	double N1 = n1.squared_length() + EPS;
+	double N2 = n2.squared_length() + EPS;
+	double N1N2 = N1*N2;
+
+	double dN1 = 2*n1.x()*dn1.x + 2*n1.y()*dn1.y + 2*n1.z()*dn1.z;
+	double dN2 = 2*n2.x()*dn2.x + 2*n2.y()*dn2.y + 2*n2.z()*dn2.z;
+
+	double dN1N2 = dN1*N2 + N1*dN2;
+
+	double dSN1N2 = 0.5*dN1N2/sqrt(N1N2);
+
+	return (sqrt(N1N2)*dg - dSN1N2*g)/(N1N2);
+}
+

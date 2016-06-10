@@ -238,16 +238,16 @@ void BasicMesh::ComputeStretchInverse(Vertex_const_handle v1,Vertex_const_handle
 
 void BasicMesh::ComputeShapeOperator(facet* face){
 	/* determinant based */
-	face->theta1 = -computeDeterminant(face->v1,face->v2,face->v3,face->nb1) / ((face->area*face->sideArea1)/face->l1);
-	face->theta2 = -computeDeterminant(face->v1,face->v2,face->v3,face->nb2) / ((face->area*face->sideArea2)/face->l2);
-	face->theta3 = -computeDeterminant(face->v1,face->v2,face->v3,face->nb3) / ((face->area*face->sideArea3)/face->l3);
+// 	face->theta1 = -computeDeterminant(face->v1,face->v2,face->v3,face->nb1) / ((face->area*face->sideArea1)/face->l1);
+// 	face->theta2 = -computeDeterminant(face->v1,face->v2,face->v3,face->nb2) / ((face->area*face->sideArea2)/face->l2);
+// 	face->theta3 = -computeDeterminant(face->v1,face->v2,face->v3,face->nb3) / ((face->area*face->sideArea3)/face->l3);
 	/* & */
 
-	/* anlge based
+	/* anlge based */
 	face->theta1 = computeAngle(face->v1->point(),face->v2->point(),face->v3->point(),face->nb1->point());
 	face->theta2 = computeAngle(face->v2->point(),face->v3->point(),face->v1->point(),face->nb2->point());
 	face->theta3 = computeAngle(face->v3->point(),face->v1->point(),face->v2->point(),face->nb3->point());
-	*/
+	
 
 	face->SO1[0][0] = face->t1.x() * face->t1.x() / (2*face->area*face->l1);
 	face->SO1[0][1] = face->t1.x() * face->t1.y() / (2*face->area*face->l1);
