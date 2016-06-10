@@ -28,41 +28,41 @@ if ( CGAL_FOUND )
 
     include( ${CGAL_USE_FILE} )
     include( ${EIGEN3_USE_FILE} )
-#     # use either Eigen or BLAS/LAPACK
-#     #find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
-#     if (NOT EIGEN3_FOUND)
-#         message(STATUS "Eigen not found")
-#         #find_package(LAPACK)
-#         #if(LAPACK_FOUND)
-#         #message("Lapack Found")
-#         #  include( ${LAPACK_USE_FILE} )
-#         #endif(LAPACK_FOUND)
-#     else()
-#         message("Eigen found")
-#         include( ${EIGEN3_USE_FILE} )
-#     endif()
-# 
-#     if(EIGEN3_FOUND OR LAPACK_FOUND)
-#         # Link with Boost.ProgramOptions (optional)
-#         find_package(Boost QUIET COMPONENTS program_options)
-#         if(Boost_PROGRAM_OPTIONS_FOUND)
-#             if( CGAL_AUTO_LINK_ENABLED )
-#                 message( STATUS "Boost.ProgramOptions library: found" )
-#             else()
-#                 message( STATUS "Boost.ProgramOptions library: ${Boost_PROGRAM_OPTIONS_LIBRARY}" )
-#             endif()
-#             add_definitions( "-DCGAL_USE_BOOST_PROGRAM_OPTIONS" )
-#             if ( NOT CGAL_AUTO_LINK_ENABLED )
-#                 message("FOOBAR")
-#                 link_libraries( ${Boost_PROGRAM_OPTIONS_LIBRARY} )
-#             endif()
-#         endif()
-# 
-#     else(EIGEN3_FOUND OR LAPACK_FOUND)
-# 
-#         message(STATUS "NOTICE: This program requires either Eigen 3.1 (or greater) or LAPACK, and will not be compiled.")
-# 
-#     endif(EIGEN3_FOUND OR LAPACK_FOUND)
+    #     # use either Eigen or BLAS/LAPACK
+    #     #find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
+    #     if (NOT EIGEN3_FOUND)
+    #         message(STATUS "Eigen not found")
+    #         #find_package(LAPACK)
+    #         #if(LAPACK_FOUND)
+    #         #message("Lapack Found")
+    #         #  include( ${LAPACK_USE_FILE} )
+    #         #endif(LAPACK_FOUND)
+    #     else()
+    #         message("Eigen found")
+    #         include( ${EIGEN3_USE_FILE} )
+    #     endif()
+    # 
+    #     if(EIGEN3_FOUND OR LAPACK_FOUND)
+    #         # Link with Boost.ProgramOptions (optional)
+    #         find_package(Boost QUIET COMPONENTS program_options)
+    #         if(Boost_PROGRAM_OPTIONS_FOUND)
+    #             if( CGAL_AUTO_LINK_ENABLED )
+    #                 message( STATUS "Boost.ProgramOptions library: found" )
+    #             else()
+    #                 message( STATUS "Boost.ProgramOptions library: ${Boost_PROGRAM_OPTIONS_LIBRARY}" )
+    #             endif()
+    #             add_definitions( "-DCGAL_USE_BOOST_PROGRAM_OPTIONS" )
+    #             if ( NOT CGAL_AUTO_LINK_ENABLED )
+    #                 message("FOOBAR")
+    #                 link_libraries( ${Boost_PROGRAM_OPTIONS_LIBRARY} )
+    #             endif()
+    #         endif()
+    # 
+    #     else(EIGEN3_FOUND OR LAPACK_FOUND)
+    # 
+    #         message(STATUS "NOTICE: This program requires either Eigen 3.1 (or greater) or LAPACK, and will not be compiled.")
+    # 
+    #     endif(EIGEN3_FOUND OR LAPACK_FOUND)
 
 else()
 
@@ -108,6 +108,17 @@ endif()
 find_path(LBFGS_INCLUDE_DIR lbfgs.h )
 include_directories( ${LBFGS_INCLUDE_DIR} )
 find_library(LBFGS_LIBRARY NAMES liblbfgs.so )
+
+#########################################################
+# FIND OPENMP
+#########################################################
+FIND_PACKAGE( OpenMP REQUIRED)
+if(OPENMP_FOUND)
+    message("OPENMP FOUND")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
 
 # Creating entries for target: Demons
 # ############################
