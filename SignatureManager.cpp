@@ -516,8 +516,6 @@ void BasicMesh::findCorrespondenceBothWay(BasicMesh* secondMesh,double geo_weigh
 	std::map<Vertex_const_handle, signature*>::iterator iterSig;
 
 	for (int i = 0; vb != ve; vb++,i++){
-		//cout<<"Working on vertex: "<<i<<endl;
-
 		vh1 = vb;
 		iterSig = signatureMap.find(vh1);
 		if (iterSig == signatureMap.end()) continue;

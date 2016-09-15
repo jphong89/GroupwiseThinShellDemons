@@ -145,8 +145,9 @@ lbfgsfloatval_t penalizeData(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int i
 	lbfgsfloatval_t fx = 0.0;
 
 	int i = 0;
-	//#pragma omp parallel for private(i)
-	for (i = 0; vb != ve; vb++,i++){
+    // changed for loop format to work with openMP in linux
+	#pragma omp parallel for private(i)
+	for (i = 0; i<Surface[idx]->vertexNum;i++){
 		vh = vb;
 
 		Point_3 deformed = vh->point() + Vector_3(u[i*3],u[i*3+1],u[i*3+2]);
@@ -160,6 +161,7 @@ lbfgsfloatval_t penalizeData(const lbfgsfloatval_t *u, lbfgsfloatval_t *g, int i
 		g[i*3+1] = -2 * dis.y() * weight;
 		g[i*3+2] = -2 * dis.z() * weight;
 		fx = fx + weight * dis.squared_length();
+        vb++;
 	}
 
 	return fx;

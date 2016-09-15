@@ -63,121 +63,117 @@ float max_all;
 //pthread_mutex_t lock;
 
 void readFileList(string list){
-	ifstream fin;
+    ifstream fin;
 
-	fin.open(list.c_str());
+    fin.open(list.c_str());
 
-	fileName = new string[surfaceNum];
+    fileName = new string[surfaceNum];
 
-	for (int i = 0; i < surfaceNum; i++)
-		fin>>fileName[i];
+    for (int i = 0; i < surfaceNum; i++)
+        fin>>fileName[i];
 
-	for (int i = 0; i < surfaceNum; i++){
-		cout<<i<<" file name: "<<fileName[i];
-	    cout<<endl;
-	}
+    for (int i = 0; i < surfaceNum; i++){
+        cout<<i<<" file name: "<<fileName[i];
+        cout<<endl;
+    }
 }
 
 void readMatchingList(string list){
-	ifstream fin;
+    ifstream fin;
 
-	fin.open(list.c_str());
+    fin.open(list.c_str());
 
-	landmarkFile = new string[surfaceNum];
+    landmarkFile = new string[surfaceNum];
 
-	for (int i = 0; i < surfaceNum; i++)
-		fin>>landmarkFile[i];
+    for (int i = 0; i < surfaceNum; i++)
+        fin>>landmarkFile[i];
 
-	for (int i = 0; i < surfaceNum; i++){
-		cout<<i<<" landmark name: "<<landmarkFile[i];
-		cout<<endl;
-	}
+    for (int i = 0; i < surfaceNum; i++){
+        cout<<i<<" landmark name: "<<landmarkFile[i];
+        cout<<endl;
+    }
 }
 
 int main(int argc, char* argv[])
 {
-	char* landmark1; //landmark1
-	char* landmark2; //landmark2
+    char* landmark1; //landmark1
+    char* landmark2; //landmark2
 
-	//format: demons.exe surface1.off surface2.off weight_output.txt landmark1.txt landmark2.txt
-	if (argc > 2){
-		surfaceNum = atoi(argv[1]);
+    //format: demons.exe surface1.off surface2.off weight_output.txt landmark1.txt landmark2.txt
+    if (argc > 2){
+        surfaceNum = atoi(argv[1]);
 
-		string fileList;
-		fileList = argv[2];
-		readFileList(fileList);
+        string fileList;
+        fileList = argv[2];
+        readFileList(fileList);
 
-		if (argc > 3) {
-			REGWEIGHT = atof(argv[3]);
-			BENDWEIGHT = atof(argv[4]);
-		}
+        if (argc > 3) {
+            REGWEIGHT = atof(argv[3]);
+            BENDWEIGHT = atof(argv[4]);
+        }
 
-		if (argc > 5) DISTHRESHOLD = atof(argv[5]);
-		if (argc > 6) EUCLWEIGHT = atof(argv[6]);
-		
-		if (argc > 7) {
-			YOUNG = atof(argv[7]);
-			POISSON = atof(argv[8]);
-		}
+        if (argc > 5) DISTHRESHOLD = atof(argv[5]);
+        if (argc > 6) EUCLWEIGHT = atof(argv[6]);
 
-		if (argc > 9) {
-			MESHLABOPTION = atoi(argv[9]);
-		}
+        if (argc > 7) {
+            YOUNG = atof(argv[7]);
+            POISSON = atof(argv[8]);
+        }
 
-		string matchingFile;
-		if (argc > 10) {
-			matchingFile = argv[10];
-			readMatchingList(matchingFile);
-			TEXTURE_RANGE = atoi(argv[11]);
-		}
-		cout<<"STRETCHING WEIGHT: "<<REGWEIGHT<<" -BENDING WEIGHT: "<<BENDWEIGHT<<" -EUCLIDEAN THRESHOLD: "
-			<<DISTHRESHOLD<<" -GEOMETRIC FEATURE WEIGHT: "<<EUCLWEIGHT
-			<<" -YOUNG: "<<YOUNG<<" -POSSION: "<<POISSON<<" -MESHLAB: "<<MESHLABOPTION<<endl;
-	}else{
-		cout<<"not enough parameters, refer ReadMe.txt";
-	}
+        if (argc > 9) {
+            MESHLABOPTION = atoi(argv[9]);
+        }
 
-	//omp_set_dynamic(0);
-	//omp_set_num_threads(6);
-	int i;
-	////////////////////////////////////*read & translate surfaces */////////////////////////////////////////////
-	Surface = new BasicMesh*[surfaceNum];
+        string matchingFile;
+        if (argc > 10) {
+            matchingFile = argv[10];
+            readMatchingList(matchingFile);
+            TEXTURE_RANGE = atoi(argv[11]);
+        }
+        cout<<"STRETCHING WEIGHT: "<<REGWEIGHT<<" -BENDING WEIGHT: "<<BENDWEIGHT<<" -EUCLIDEAN THRESHOLD: "
+            <<DISTHRESHOLD<<" -GEOMETRIC FEATURE WEIGHT: "<<EUCLWEIGHT
+            <<" -YOUNG: "<<YOUNG<<" -POSSION: "<<POISSON<<" -MESHLAB: "<<MESHLABOPTION<<endl;
+    }else{
+        cout<<"not enough parameters, refer ReadMe.txt";
+    }
 
-//	#pragma omp parallel for private(i)
-	for (i = 0; i < surfaceNum; i++){
-			cout<<"Begin Constructing Mesh: "<<fileName[i]<<endl;
-			Surface[i] = new BasicMesh(fileName[i],i);
-			Surface[i]->ComputeMeshProperty();
-			Surface[i]->findSignatureAll();
-			Surface[i]->constructEdgeList();
-			Surface[i]->constructVertexList();
-			Surface[i]->initialDeformation();
-			if (argc > 10) Surface[i]->constructLandmark(landmarkFile[i]);
+    omp_set_dynamic(0);
+    omp_set_num_threads(8);
+    int i,j;
+    ////////////////////////////////////*read & translate surfaces */////////////////////////////////////////////
+    Surface = new BasicMesh*[surfaceNum];
 
-			//Surface[i]->outputFeature();
-	}
+#pragma omp parallel for private(i)
+    for (i = 0; i < surfaceNum; i++){
+        cout<<"Begin Constructing Mesh: "<<fileName[i]<<endl;
+        Surface[i] = new BasicMesh(fileName[i],i);
+        Surface[i]->ComputeMeshProperty();
+        Surface[i]->findSignatureAll();
+        Surface[i]->constructEdgeList();
+        Surface[i]->constructVertexList();
+        Surface[i]->initialDeformation();
+        if (argc > 10) Surface[i]->constructLandmark(landmarkFile[i]);
 
-	/////////////////////////////* 3compute correspondences for registration *///////////////////////////////////
-	
-//	#pragma omp parallel for private(i)
-	for (i = 0; i < surfaceNum; i++){
-		cout<<"Computing attraction force: "<<fileName[i]<<endl;
-		
-		int startSurface = max_zenyo(i - GEOMETRIC_RANGE, 0);
-		int endSurface = min_zenyo(i + GEOMETRIC_RANGE, surfaceNum - 1);
+        //Surface[i]->outputFeature();
+    }
+    /////////////////////////////* 3compute correspondences for registration *///////////////////////////////////
+    for (i = 0; i < surfaceNum; i++){
+        cout<<"Computing attraction force: "<<fileName[i]<<endl;
 
-		for (int j = startSurface; j <= endSurface; j++)
-			if (i != j) {
-				Surface[i]->findCorrespondenceBothWay(Surface[j],EUCLWEIGHT);
-				Surface[i]->findMatch2(Surface[j],j);
-				/*Surface[i]->outputAffinity(Surface[j],j);*/
-			}
+        int startSurface = max_zenyo(i - GEOMETRIC_RANGE, 0);
+        int endSurface = min_zenyo(i + GEOMETRIC_RANGE, surfaceNum - 1);
+        for (int j = startSurface; j <= endSurface; j++)
+            if (i != j) {
+                Surface[i]->findCorrespondenceBothWay(Surface[j],EUCLWEIGHT);
+                Surface[i]->findMatch2(Surface[j],j);
+                /*Surface[i]->outputAffinity(Surface[j],j);*/
+            }
 
-		Surface[i]->summerizeForce();
-		//Surface[i]->outputForce();
-	}
-	/////////////////////////////* rendering and optimization *////////////////////////////////////////////////////////////
-	startOptimization(); //direct begin for script
-	return 0;
+        Surface[i]->summerizeForce();
+        //Surface[i]->outputForce();
+    }
+    /////////////////////////////* rendering and optimization *////////////////////////////////////////////////////////////
+    startOptimization(); //direct begin for script
+    return 0;
 }
 
